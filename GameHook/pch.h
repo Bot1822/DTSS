@@ -9,6 +9,7 @@
 
 // 添加要在此处预编译的标头
 #include "framework.h"
+#include <mutex>
 #include <string>
 #include <sstream>
 #include <comdef.h>
@@ -30,6 +31,5 @@
 #include <mmsystem.h>
 #include <iostream>
 #pragma comment(lib, "winmm" )
-#include "MinHook.h"
 
 #endif //PCH_H

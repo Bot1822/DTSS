@@ -4,7 +4,9 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${CUDA_PATH}/include"
+                "${CUDA_PATH}/include",
+                "${workspaceFolder}/GameHook",
+                "${workspaceFolder}/Minhook/include"
             ],
             "defines": [
                 "_DEBUG",

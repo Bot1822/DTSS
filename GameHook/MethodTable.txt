@@ -83,3 +83,16 @@ IDXGISwapChain Method Table:
 [14]  GetContainingOutput
 [15]  GetFrameStatistics
 [16]  GetLastPresentCount
+
+ID3D12Fence Method Table:
+[0]   QueryInterface
+[1]   AddRef
+[2]   Release
+[3]   GetPrivateData
+[4]   SetPrivateData
+[5]   SetPrivateDataInterface
+[6]   SetName
+[7]   GetDevice
+[8]   GetCompletedValue
+[9]   SetEventOnCompletion
+[10]  Signal
