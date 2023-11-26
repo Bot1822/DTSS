@@ -1,82 +1,9 @@
-﻿// dllmain.cpp : 定义 DLL 应用程序的入口点。
 #include "pch.h"
+#include "DX12Hook.h"
+#include "HookDef.h"
 #include "Logger.h"
 #include "MinHook.h"
-
-#define LOG_ENABLED
-
-// 写日志方法
-void writeLog(const std::string& message)
-{
-#ifdef LOG_ENABLED
-    Logger::LogSafe(message);
-#endif
-}
-
-// 全局资源，用于时间片轮转，指示时间片状态
-volatile uint64_t render_status = 1;
-SRWLOCK render_status_lock; // 用于保护RenderStatus的读写
-CONDITION_VARIABLE render_status_cond; // 用于等待RenderStatus变为1
-
-void initRenderStatus()
-{
-    InitializeSRWLock(&render_status_lock);
-    InitializeConditionVariable(&render_status_cond);
-}
-
-// 时间片数量
-int gameTsNum = 4;
-int otherTsNum = 20;
-int TsNum = 24;
-
-void setRenderStatus(int flag)
-{
-    AcquireSRWLockExclusive(&render_status_lock);
-    render_status = flag;
-    ReleaseSRWLockExclusive(&render_status_lock);
-}
-int getRenderStatus()
-{
-    AcquireSRWLockShared(&render_status_lock);
-    int flag = render_status;
-    ReleaseSRWLockShared(&render_status_lock);
-    return flag;
-}
-void waitRenderStatus(int flag)
-{
-    AcquireSRWLockShared(&render_status_lock);
-    while (render_status != flag)
-    {
-        SleepConditionVariableSRW(&render_status_cond, &render_status_lock, INFINITE, CONDITION_VARIABLE_LOCKMODE_SHARED);
-    }
-    ReleaseSRWLockShared(&render_status_lock);
-}
-void wakeRender()
-{
-    AcquireSRWLockExclusive(&render_status_lock);
-    render_status = 1;
-    WakeAllConditionVariable(&render_status_cond);
-    ReleaseSRWLockExclusive(&render_status_lock);
-}
-
-
-static uint64_t* g_pD3D12DeviceVTable;
-static uint64_t* g_pD3D12CommandQueueVTable;
-static uint64_t* g_pDXGISwapChainVTable;
-static uint64_t* g_pD3D12FenceVTable;
-
-HANDLE hTimerQueue = NULL;
-HANDLE hTimer_loop = NULL;
-
-// 用于保存原始的方法
-typedef void(WINAPI* pfnExecuteCommandLists)(ID3D12CommandQueue* pCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists);
-pfnExecuteCommandLists pfnExecuteCommandListsOrig = NULL;
-typedef HRESULT(WINAPI* pfnPresent)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
-pfnPresent pfnPresentOrig = NULL;
-typedef HRESULT(WINAPI* pfnSetEventOnCompletion)(ID3D12Fence* pFence, UINT64 Value, HANDLE hEvent);
-pfnSetEventOnCompletion pfnSetEventOnCompletionOrig = NULL;
-typedef HRESULT(WINAPI* pfnSignal)(ID3D12Fence* pFence, UINT64 Value);
-pfnSignal pfnSignalOrig = NULL;
+#include "RenderStatus.h"
 
 bool initDX12VTable()
 {
@@ -245,76 +172,7 @@ bool initDX12VTable()
     return true;
 }
 
-volatile int waitnum = 0;
-SRWLOCK waitnumLock; // 用于保护waitnum的读写
 
-// Hook后的ExecuteCommandLists方法
-void WINAPI hkExecuteCommandListsHook(ID3D12CommandQueue* pCommandQueue, UINT NumCommandLists, ID3D12CommandList* const* ppCommandLists)
-{
-    if (getRenderStatus() == 1)
-    {
-        // 调用原始的ExecuteCommandLists方法
-        writeLog("Call ExecuteCommandLists");
-        pfnExecuteCommandListsOrig(pCommandQueue, NumCommandLists, ppCommandLists);
-        return;
-    }
-
-    else
-    {
-    // 等待时间片状态为1
-    writeLog("Call ExecuteCommandLists but wait");
-
-    // AcquireSRWLockExclusive(&waitnumLock);
-    // waitnum++;
-    // writeLog("waitnum+: " + std::to_string(waitnum));
-    // ReleaseSRWLockExclusive(&waitnumLock);
-
-    waitRenderStatus(1);
-
-    // AcquireSRWLockExclusive(&waitnumLock);
-    // waitnum--;
-    // writeLog("waitnum-: " + std::to_string(waitnum));
-    // ReleaseSRWLockExclusive(&waitnumLock);
-
-    // 调用原始的ExecuteCommandLists方法
-    writeLog("Resume ExecuteCommandLists");
-    pfnExecuteCommandListsOrig(pCommandQueue, NumCommandLists, ppCommandLists);
-    return;
-    }
-}
-
-// Hook后的Present方法
-HRESULT WINAPI hkPresentHook(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags)
-{
-    writeLog("IN hkPresentHook");
-    // 调用原始的Present方法
-    HRESULT hr = pfnPresentOrig(pSwapChain, SyncInterval, Flags);
-    // 每个调度周期只允许展示一次画面
-    setRenderStatus(0);
-
-    return hr;
-}
-
-// Hook后的SetEventOnCompletion方法
-HRESULT WINAPI hkSetEventOnCompletionHook(ID3D12Fence* pFence, UINT64 Value, HANDLE hEvent)
-{
-    writeLog("IN hkSetEventOnCompletionHook");
-    // 调用原始的SetEventOnCompletion方法
-    HRESULT hr = pfnSetEventOnCompletionOrig(pFence, Value, hEvent);
-    return hr;
-}
-
-// Hook后的Signal方法
-HRESULT WINAPI hkSignalHook(ID3D12Fence* pFence, UINT64 Value)
-{
-    writeLog("IN hkSignalHook");
-    // 调用原始的Signal方法
-    HRESULT hr = pfnSignalOrig(pFence, Value);
-    return hr;
-}
-
-// Hook DX12 VTable的线程
-HANDLE hThread_HookDX12VTable = NULL;
 DWORD WINAPI hookDX12VTable()
 {
     if (!initDX12VTable())
@@ -355,14 +213,6 @@ DWORD WINAPI hookDX12VTable()
     else {
         writeLog("MH_CreateHook SetEventOnCompletion done");
     }
-    // Hook D3D12Fence的Signal方法
-    if (MH_CreateHook((void*)g_pD3D12FenceVTable[10], hkSignalHook, (void**)&pfnSignalOrig) != MH_OK) {
-        MessageBoxA(NULL, "MH_CreateHook Signal failed!", "Error", MB_OK);
-        return 1;
-    }
-    else {
-        writeLog("MH_CreateHook Signal done");
-    }
 
     if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK) {
         MessageBoxA(NULL, "MH_EnableHook failed!", "Error", MB_OK);
@@ -401,13 +251,6 @@ void unhookDX12VTable()
         writeLog("MH_DisableHook SetEventOnCompletion done");
     }
 
-    if (MH_DisableHook((LPVOID)g_pD3D12FenceVTable[10]) != MH_OK) {
-        MessageBoxA(NULL, "MH_DisableHook Signal failed!", "Error", MB_OK);
-    }
-    else {
-        writeLog("MH_DisableHook Signal done");
-    }
-
     if (MH_Uninitialize()) {
         MessageBoxA(NULL, "MH_Uninitialize failed!", "Error", MB_OK);
     }
@@ -417,97 +260,3 @@ void unhookDX12VTable()
     writeLog("unhookDX12VTable done");
     return;
 }
-
-
-void CALLBACK timerThread(PVOID lpParam, BOOLEAN TimerOrWaitFired)
-{
-    writeLog("\nIN timerThread");
-
-    wakeRender();
-    
-    return;
-}
-
-void InitiateThreads() {    
-    hTimerQueue = CreateTimerQueue();
-    if (hTimerQueue == NULL) {
-        MessageBoxA(NULL, "CreateTimerQueue failed!", "Error", MB_OK);
-        return;
-    }
-    else {
-        writeLog("CreateTimerQueue done");
-    }
-
-    if (!CreateTimerQueueTimer(&hTimer_loop, hTimerQueue, (WAITORTIMERCALLBACK)timerThread, NULL, 0, TsNum, WT_EXECUTEINTIMERTHREAD)) {
-        MessageBoxA(NULL, "CreateTimerQueueTimer failed!", "Error", MB_OK);
-        return;
-    }
-    else {
-        writeLog("CreateTimerQueueTimer done");
-    }
-
-
-    // 创建DX12 VTable Hook线程，该线程不需要传递参数
-    hThread_HookDX12VTable = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)hookDX12VTable, NULL, 0, NULL);
-}
-
-void CleanupTimer() {
-    // 销毁timer
-    if (hTimer_loop != NULL) {
-        HANDLE event = CreateEvent(NULL, TRUE, FALSE, NULL);
-        DeleteTimerQueueTimer(hTimerQueue, hTimer_loop, event);
-        WaitForSingleObject(event, INFINITE);
-        writeLog("DeleteTimerQueueTimer done");
-        CloseHandle(event);
-        hTimer_loop = NULL;
-        writeLog("hTimer_loop has exited");
-    }
-    if (hTimerQueue != NULL) {
-        DeleteTimerQueue(hTimerQueue);
-        hTimerQueue = NULL;
-        writeLog("hTimerQueue has exited");
-    }
-
-    writeLog("CleanupTimer done");
-
-    return;
-}
-
-
-BOOL WINAPI DllMain(HINSTANCE hInstance,
-    DWORD  ul_reason_for_call,
-    LPVOID lpReserved
-)
-{
-    switch (ul_reason_for_call)
-    {
-    case DLL_PROCESS_ATTACH:
-        DisableThreadLibraryCalls(hInstance);
-        
-        // 设置系统定时器精度
-        timeBeginPeriod(1); 
-
-        initRenderStatus();
-
-        //启用日志
-        Logger::Initialize("C:\\Users\\Martini\\workspace\\VSrepos\\DTSS\\log\\gamehook.log", false);
-
-        InitiateThreads();
-        break;
-    case DLL_PROCESS_DETACH:
-        CleanupTimer();
-        unhookDX12VTable();
-        
-        // 恢复系统定时器精度
-        timeEndPeriod(1);
-        writeLog("Log end time: " + std::to_string(timeGetTime()));
-
-        // 关闭日志
-        Logger::Close();
-
-        MessageBoxA(NULL, "DLL_PROCESS_DETACH", "Notice", MB_OK);
-        break;
-    }
-    return TRUE;
-}
-

@@ -113,9 +113,9 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;GAMEHOOK_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>C:\Users\Martini\workspace\VSrepos\DTSS\GameHook;C:\Users\Martini\workspace\VSrepos\DTSS\Minhook\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Martini\workspace\VSrepos\DTSS\GameHook\include;C:\Users\Martini\workspace\VSrepos\DTSS\Minhook\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -143,27 +143,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="dx12hook.h" />
-    <ClInclude Include="framework.h" />
-    <ClInclude Include="Logger.h" />
-    <ClInclude Include="pch.h" />
-    <ClInclude Include="resource.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="dx12hook.cpp" />
-    <ClCompile Include="Logger.cpp" />
-    <ClCompile Include="pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Minhook\Minhook.vcxproj">
       <Project>{afae899b-8e41-44aa-b28d-d7327754176e}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\DX12Hook.h" />
+    <ClInclude Include="include\framework.h" />
+    <ClInclude Include="include\HookDef.h" />
+    <ClInclude Include="include\Logger.h" />
+    <ClInclude Include="include\mylogger.h" />
+    <ClInclude Include="include\pch.h" />
+    <ClInclude Include="include\RenderStatus.h" />
+    <ClInclude Include="include\resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\dllmain.cpp" />
+    <ClCompile Include="src\DX12Hook.cpp" />
+    <ClCompile Include="src\HookDef.cpp" />
+    <ClCompile Include="src\Logger.cpp" />
+    <ClCompile Include="src\pch.cpp" />
+    <ClCompile Include="src\RenderStatus.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -19,3 +19,5 @@ private:
     static bool m_isInitialized;
 };
 
+// 写日志方法
+void writeLog(const std::string& message);

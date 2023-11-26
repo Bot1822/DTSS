@@ -15,33 +15,48 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="framework.h">
+    <ClInclude Include="include\DX12Hook.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="pch.h">
+    <ClInclude Include="include\framework.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="include\HookDef.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="dx12hook.h">
+    <ClInclude Include="include\Logger.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Logger.h">
+    <ClInclude Include="include\mylogger.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\pch.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\RenderStatus.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\resource.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dllmain.cpp">
+    <ClCompile Include="src\dllmain.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="pch.cpp">
+    <ClCompile Include="src\DX12Hook.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="dx12hook.cpp">
+    <ClCompile Include="src\HookDef.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Logger.cpp">
+    <ClCompile Include="src\Logger.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pch.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RenderStatus.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

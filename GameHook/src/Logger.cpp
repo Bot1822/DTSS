@@ -5,6 +5,12 @@ std::ofstream Logger::m_logFile;
 std::mutex Logger::m_mutex;
 bool Logger::m_isInitialized = false;
 
+// 写文件方法
+void writeLog(const std::string& message)
+{
+    Logger::LogSafe(message);
+}
+
 void Logger::Initialize(const std::string& logFilePath, bool isAppend)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -17,7 +23,7 @@ void Logger::Initialize(const std::string& logFilePath, bool isAppend)
     {
         throw std::runtime_error("Failed to open log file.");
     }
-    m_logFile << "Log file opened." << std::endl;
+    m_logFile << "Log file opened!" << std::endl;
     m_logFile.flush();
     m_isInitialized = true;
 }
